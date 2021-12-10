@@ -2,6 +2,11 @@
 
 #include "tree.hpp"
 
+#define CL C(root->left)
+#define CR C(root->right)
+#define DL D(root->left)
+#define DR D(root->right)
+
 enum ErrorCodes {
     OKAY = 0,
     WRONG_ARGUMENTS_NUMBER,
