@@ -52,11 +52,11 @@ enum Opertations {
 #define NEW_CONST(x)               createNode(TYPE_CONST, OP_NO, x, false, nullptr, nullptr)
 #define NEW_OP(op, l, r)           createNode(TYPE_OPERATION, op, 0, false, l, r)
 #define NEW_FUNC(op, l, r)         createNode(TYPE_OPERATION, op, 0, true, l, r)
-#define NEW_NO                     createNode(TYPE_NO, OP_NO, 0, false, nullptr, nullptr)
+#define NEW_NO()                   createNode(TYPE_NO, OP_NO, 0, false, nullptr, nullptr)
 #define NEW_NO_WITH_PARENT(parent) createNode(TYPE_NO, OP_NO, 0, false, nullptr, nullptr, parent)
 
-#define NODE_TYPE_SPEC %zu
-typedef size_t nodeValueType;
+#define NODE_TYPE_SPEC %d
+typedef int nodeValueType;
 struct node {
     node *left   = nullptr, 
          *right  = nullptr, 
@@ -77,11 +77,12 @@ size_t buildTreeFromStr(char *inputSequence, size_t length, size_t i, node *root
 void setNodeTypeAndOp(node *curNode, char string[], size_t len); //!!!!
 bool getNodePath(nodePathElem_t path[], const char name[], node *curNode, bool isLeft, size_t arrSize);
 void dumpGraph(FILE *dotFile, node *curNode, size_t depth, const char prevName[] = FIRST_NODE_NAME);
+void printConnectionInfo(FILE *dotFile, node *curNode, const char prevName[]);
 void saveGraphPic(node *curNode, char savingPath[]);
 void opToName(node *curNode, char opName[]);
 void printTree(node *root);
 void printNode(node *root);
-node* createNode(NodeType type, Opertations op, size_t value, bool isFunc,
+node* createNode(NodeType type, Opertations op, nodeValueType value, bool isFunc,
                  node* lPtr, node* rPtr, node *parent = nullptr);
 void setDataValue(node *curNode, char value[]);
 void clearTree(node *curNode);

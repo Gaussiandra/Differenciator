@@ -13,3 +13,6 @@ $(binDir)/differenciator.o: differenciator.cpp differenciator.hpp
 
 $(binDir)/tree.o: tree.cpp tree.hpp
 	g++ -c tree.cpp -o $(binDir)/tree.o $(CXX_flags)
+
+clear:
+	cd $(binDir) && rm *

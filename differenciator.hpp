@@ -18,7 +18,29 @@ enum ErrorCodes {
 
 #define RETURN_ON_ERROR(func) { ErrorCodes error = (func); if (error) return error; }
 
-void differenciate(node *root);
+#define INIT_OPT_FUNC(func)                 \
+    assert(rootPtr);                        \
+    assert(*rootPtr);                       \
+                                            \
+    node *root = *rootPtr;                  \
+                                            \
+    bool returnValue = false;               \
+    if (root->left) {                       \
+        returnValue |= func(&root->left);   \
+    }                                       \
+    if (root->right) {                      \
+        returnValue |= func(&root->right);  \
+    }
+
+void differenciateTree(node *root);
+void optimizeTree(node **root);
+bool optAdd(node **root);
+bool optMul(node **root);
+void optPropConst(node **rootPtr);
+nodeValueType multConstAfterMul(node **rootPtr, bool setConstToOne);
+//void absNegativesAfterMul(node **rootPtr);
+bool optSub(node **root);
+bool optChangeAddSub(node **rootPtr);
 node *D(node *root);
 node *C(node *root);
 ErrorCodes readDataFromPath(const char *path, char **string, size_t *szFile);

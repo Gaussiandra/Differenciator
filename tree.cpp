@@ -53,36 +53,45 @@ size_t buildTreeFromStr(char *inputSequence, size_t length, size_t i, node *curN
 
 // define?
 void setNodeTypeAndOp(node *curNode, char string[], size_t len) {
+    assert(curNode);
+    assert(string);
+
     if (!strncmp(string, "+", len)) { 
         curNode->type = TYPE_OPERATION; 
         curNode->operation = OP_ADD;
+        curNode->isFunction = false;
     }
     else if (!strncmp(string, "-", len)) { 
         curNode->type = TYPE_OPERATION; 
         curNode->operation = OP_SUB;
+        curNode->isFunction = false;
     }
     else if (!strncmp(string, "*", len)) { 
         curNode->type = TYPE_OPERATION; 
         curNode->operation = OP_MUL;
+        curNode->isFunction = false;
     }
     else if (!strncmp(string, "/", len)) { 
         curNode->type = TYPE_OPERATION; 
         curNode->operation = OP_DIV;
+        curNode->isFunction = false;
     }
     else if (!strncmp(string, "sin", len)) { 
         curNode->type = TYPE_OPERATION; 
         curNode->operation = OP_SIN;
+        curNode->isFunction = true;
     }
     else if (!strncmp(string, "cos", len)) { 
         curNode->type = TYPE_OPERATION; 
         curNode->operation = OP_COS;
+        curNode->isFunction = true;
     }
     else if (!strncmp(string, "x", len)) { 
         curNode->type = TYPE_VARIABLE; 
         curNode->operation = OP_NO;
     }
     // как не считать 2sin как 2?...
-    else if (sscanf(string, "%zu", &curNode->value) == 1) {
+    else if (sscanf(string, STR(NODE_TYPE_SPEC), &curNode->value) == 1) {
         curNode->type = TYPE_CONST;
         curNode->operation = OP_NO;
     }
@@ -94,6 +103,9 @@ void setNodeTypeAndOp(node *curNode, char string[], size_t len) {
 }
 
 void opToName(node *curNode, char opName[]) {
+    assert(curNode);
+    assert(opName);
+
     if (curNode->operation == OP_ADD) {
         strcpy(opName, "+");
     }
@@ -126,41 +138,7 @@ void dumpGraph(FILE *dotFile, node *curNode, size_t depth, const char prevName[]
         fprintf(dotFile, "%s", "digraph G {\n");
     }
 
-    if (curNode->type == TYPE_CONST) {
-        fprintf(dotFile, 
-                "%s [shape=rect, label=\""STR(NODE_TYPE_SPEC)"\" style=bold, color=\"#%s\"];\n", 
-                prevName, 
-                curNode->value,
-                CONST_COLOR);
-    }
-    else if (curNode->type == TYPE_OPERATION) {
-        char opName[MAX_OPERATION_LEN] = "";
-        opToName(curNode, opName);
-
-        if (curNode->isFunction) {
-            fprintf(dotFile, "%s [shape=rect, label=\"%s\" style=bold, color=\"#%s\"];\n", 
-                    prevName, 
-                    opName,
-                    FUNCTION_COLOR);
-        }
-        else {
-            fprintf(dotFile, "%s [shape=rect, label=\"%s\" style=bold, color=\"#%s\"];\n", 
-                    prevName, 
-                    opName,
-                    OPERATION_COLOR);
-        }
-    }    
-    else if (curNode->type == TYPE_VARIABLE) {
-        fprintf(dotFile, "%s [shape=rect, label=\"x\" style=bold, color=\"#%s\"];\n", 
-                prevName,
-                VARIABLE_COLOR);
-    }
-    else {
-        fprintf(dotFile, "%s [shape=rect, label=\"\" style=bold, color=\"#FFFFFF\"];\n", 
-                prevName,
-                NO_COLOR);
-
-    }
+    printConnectionInfo(dotFile, curNode, prevName);
 
     char newName[MAX_NODE_NAME_LEN] = {0};
     strcpy(newName, prevName);
@@ -181,10 +159,60 @@ void dumpGraph(FILE *dotFile, node *curNode, size_t depth, const char prevName[]
     } 
 }
 
+void printConnectionInfo(FILE *dotFile, node *curNode, const char prevName[]) {
+    assert(dotFile);
+    assert(curNode);
+    assert(prevName);
+
+    switch (curNode->type) {
+        case TYPE_CONST: {
+            fprintf(dotFile, 
+                    "%s [shape=rect, label=\""STR(NODE_TYPE_SPEC)"\"\
+                    style=bold, color=\"#%s\"];\n", 
+                    prevName, 
+                    curNode->value,
+                    CONST_COLOR);
+            break;
+        }
+        case TYPE_OPERATION: {
+            char opName[MAX_OPERATION_LEN] = "";
+            opToName(curNode, opName);
+
+            const char *color = FUNCTION_COLOR;
+            if (!curNode->isFunction) {
+                color = OPERATION_COLOR;
+            }
+
+            fprintf(dotFile, 
+                    "%s [shape=rect, label=\"%s\"style=bold, color=\"#%s\"];\n", 
+                    prevName, 
+                    opName,
+                    color);
+            break;
+        }    
+        case TYPE_VARIABLE: {
+            fprintf(dotFile,
+                    "%s [shape=rect, label=\"x\"style=bold, color=\"#%s\"];\n", 
+                    prevName,
+                    VARIABLE_COLOR);
+            break;
+        }
+        case TYPE_NO:
+        default: {
+            fprintf(dotFile, "%s [shape=rect, label=\"\"style=bold, color=\"#%s\"];\n", 
+                    prevName,
+                    NO_COLOR);
+            break;
+        }
+    }
+}
+
 void printTree(node *root) {
-    if (!root->right) {
-        printf("(");
+    assert(root);
+
+    if (root->isFunction) {
         printNode(root);
+        printf("(");
         if (root->left) {
             printTree(root->left);
         }
@@ -195,18 +223,27 @@ void printTree(node *root) {
             printTree(root->left);
         }
         printNode(root);
-        printTree(root->right);
+        if (root->right) {
+            printTree(root->right);
+        }
     }
 }
 
 void printNode(node *root) {
+    assert(root);
+
     switch (root->type) {
         case TYPE_NO: {
             printf("no_type");
             break;
         }
         case TYPE_CONST: {
-            printf(STR(NODE_TYPE_SPEC), root->value);
+            if (root->value < 0) {
+                printf("("STR(NODE_TYPE_SPEC)")", root->value);
+            }
+            else {
+                printf(STR(NODE_TYPE_SPEC), root->value);
+            }
             break;
         }
         case TYPE_VARIABLE: {
@@ -228,6 +265,7 @@ void printNode(node *root) {
 
 void saveGraphPic(node *curNode, char savingName[]) {
     assert(curNode);
+    assert(savingName);
 
     char savingPath[MAX_CMD_LEN] = {0};
     sprintf(savingPath, "%s.dot", savingName);
@@ -240,7 +278,7 @@ void saveGraphPic(node *curNode, char savingName[]) {
     system(dumpCmd);
 }
 
-node* createNode(NodeType type, Opertations op, size_t value, bool isFunc,
+node* createNode(NodeType type, Opertations op, nodeValueType value, bool isFunc,
                  node* lPtr, node* rPtr, node *parent) {
     node *newNode = (node*) calloc(1, sizeof(node));
     newNode->parent = parent;
