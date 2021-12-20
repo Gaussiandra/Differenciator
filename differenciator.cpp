@@ -110,18 +110,18 @@ bool optMul(node **rootPtr) {
             clearTree(root);
             return true;
         }
-        optPropConst(rootPtr);
+        return optPropConst(rootPtr);
     }
     
     return returnValue;
 }
 
-//bool ?
-void optPropConst(node **rootPtr) {
+bool optPropConst(node **rootPtr) {
     assert(rootPtr);                        
     assert(*rootPtr);                       
 
     node *root = *rootPtr;
+
     if (root->operation == OP_MUL && 
         root->left->type != TYPE_CONST &&
         root->right->type != TYPE_CONST) {
@@ -129,8 +129,11 @@ void optPropConst(node **rootPtr) {
         if (mult != 1) {
             *rootPtr = NEW_OP(OP_MUL, NEW_CONST(mult), C(root));
             clearTree(root);
+            return true;
         }
     }
+
+    return false;
 }
 
 nodeValueType multConstAfterMul(node **rootPtr, bool setConstToOne) {
@@ -164,27 +167,6 @@ nodeValueType multConstAfterMul(node **rootPtr, bool setConstToOne) {
 
     return returnValue;
 }
-
-// void absNegativesAfterMul(node **rootPtr) {
-//     assert(rootPtr);                        
-//     assert(*rootPtr);                       
-                                            
-//     node *root = *rootPtr;                  
-                                                           
-//     if (root->left && root->left->operation == OP_MUL) {                       
-//         absNegativesAfterMul(&root->left);   
-//     }                                       
-//     if (root->right && root->right->operation == OP_MUL) {                      
-//         absNegativesAfterMul(&root->right);  
-//     }
-
-//     if (root->left->type == TYPE_CONST && root->left->value < 0) {
-//         root->left->value *= -1; 
-//     }
-//     if (root->right->type == TYPE_CONST && root->right->value < 0) {
-//         root->right->value *= -1; 
-//     }
-// }
 
 bool optSub(node **rootPtr) {
     INIT_OPT_FUNC(optSub);
@@ -245,10 +227,11 @@ node *D(node *root) {
         case TYPE_CONST:    return NEW_CONST(0);
         case TYPE_VARIABLE: return NEW_CONST(1);
         case TYPE_OPERATION: {
-            switch (root->operation) {
+            switch (root->operation) { //^/tg, arcsin, arccos, arctg
                 case OP_ADD: return NEW_OP(OP_ADD, DL, DR);
                 case OP_SUB: return NEW_OP(OP_SUB, DL, DR);
                 case OP_MUL: return NEW_OP(OP_ADD, NEW_OP(OP_MUL, DL, CR), NEW_OP(OP_MUL, CL, DR));
+                // case OP_POW: return NEW_OP(OP_POW, NEW_OP(OP_MUL, CR, ), NEW_OP(OP_SUB, ))
                 case OP_SIN: return NEW_OP(OP_MUL, NEW_FUNC(OP_COS, CL, nullptr), DL);
                 /////!!!
                 case OP_COS: return NEW_OP(OP_MUL, NEW_OP(OP_MUL, NEW_FUNC(OP_SIN, CL, nullptr), NEW_CONST(-1)), DL);
